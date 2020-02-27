@@ -13,6 +13,7 @@ export const CODE = {
     MINE: -7,
 };
 
+
 export const TableContext = createContext({
     tableData: [
         [-1, -1, -1, -1, -1, -1, -1],
