@@ -43,8 +43,10 @@ const getTdText = (code) => {
         case CODE.QUESTION_MINE:
         case CODE.QUESTION:
             return '?';
-        default:
+        case 0:
             return '';
+        default:
+            return code;
     }
 };
 

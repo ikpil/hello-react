@@ -87,6 +87,43 @@ const reducer = (state, action) => {
             const tableData = [...state.tableData];
             tableData[action.row] = [...tableData[action.row]];
             tableData[action.row][action.cell] = CODE.OPENED;
+
+            let dirs = [
+                [-1, -1], [0, -1], [1, -1],
+                [-1, 0], [1, 0],
+                [-1, 1], [0, 1], [1, 1],
+            ]
+
+            console.log(`loop - dirs(${dirs})`);
+
+            let around = [];
+            for (let i = 0; i < dirs.length; ++i) {
+                let dirX = dirs[i][0];
+                let dirY = dirs[i][1];
+
+                console.log(`loop - dirX(${dirX}) dirY(${dirY})`)
+
+                let rangeX = action.cell + dirX;
+                let rangeY = action.row + dirY;
+
+                if (0 > rangeX || 0 > rangeY || tableData[0].length <= rangeX || tableData.length <= rangeY) {
+                    continue;
+                }
+
+                if (tableData[action.row + dirY][action.cell + dirX]) {
+                    console.log(`table data - ${tableData[action.row + dirY][action.cell + dirX]}`)
+                    around = around.concat(
+                        tableData[action.row + dirY][action.cell + dirX]
+                    )
+                }
+            }
+
+            tableData[action.row][action.cell] = around
+                .filter(v => [CODE.MINE, CODE.FLAG_MINE, CODE.QUESTION_MINE].includes(v))
+                .length;
+
+            console.log(`around - ${around}`);
+ 
             return {
                 ...state,
                 tableData,
