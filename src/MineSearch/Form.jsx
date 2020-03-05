@@ -27,8 +27,8 @@ const Form = () => {
     return (
         <div>
             <input type="number" placeholder="세로" value={row} onChange={onChangeRow} />
-            <input type="number" placeholder="가로" value={row} onChange={onChangeCell} />
-            <input type="number" placeholder="지뢰" value={row} onChange={onChangeMine} />
+            <input type="number" placeholder="가로" value={cell} onChange={onChangeCell} />
+            <input type="number" placeholder="지뢰" value={mine} onChange={onChangeMine} />
             <button onClick={onClickBtn}>시작</button>
         </div>
     )
