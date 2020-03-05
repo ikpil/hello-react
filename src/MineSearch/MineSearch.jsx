@@ -88,41 +88,92 @@ const reducer = (state, action) => {
             tableData[action.row] = [...tableData[action.row]];
             tableData[action.row][action.cell] = CODE.OPENED;
 
-            let dirs = [
-                [-1, -1], [0, -1], [1, -1],
-                [-1, 0], [1, 0],
-                [-1, 1], [0, 1], [1, 1],
-            ]
+            tableData.forEach((row, i) => {
+                tableData[i] = [...state.tableData[i]]
+            });
 
-            console.log(`loop - dirs(${dirs})`);
-
-            let around = [];
-            for (let i = 0; i < dirs.length; ++i) {
-                let dirX = dirs[i][0];
-                let dirY = dirs[i][1];
-
-                console.log(`loop - dirX(${dirX}) dirY(${dirY})`)
-
-                let rangeX = action.cell + dirX;
-                let rangeY = action.row + dirY;
-
-                if (0 > rangeX || 0 > rangeY || tableData[0].length <= rangeX || tableData.length <= rangeY) {
-                    continue;
+            const checked = [];
+            const checkAround = (row, cell) => {
+                console.log('row/cel : ', row + ',' + cell);
+                // 이미 열린 칸이라면 패스
+                const isIncluded = [CODE.OPENED, CODE.FLAG_MINE, CODE.FLAG, CODE.QUESTION_MINE, CODE.QUESTION].includes(tableData[row][cell]);
+                if (isIncluded) {
+                    return;
                 }
 
-                if (tableData[action.row + dirY][action.cell + dirX]) {
-                    console.log(`table data - ${tableData[action.row + dirY][action.cell + dirX]}`)
-                    around = around.concat(
-                        tableData[action.row + dirY][action.cell + dirX]
-                    )
+                // 이미 검사한 칸을 경우 패스
+                if (checked.includes(row + ',' + cell)) {
+                    return;
                 }
+
+                checked.push(row + ',' + cell);
+
+                let dirs = [
+                    [-1, -1], [0, -1], [1, -1],
+                    [-1, 0], [1, 0],
+                    [-1, 1], [0, 1], [1, 1],
+                ]
+    
+                console.log(`loop - dirs(${dirs})`);
+    
+                let around = [];
+                for (let i = 0; i < dirs.length; ++i) {
+                    let dirX = dirs[i][0];
+                    let dirY = dirs[i][1];
+    
+                    console.log(`loop - dirX(${dirX}) dirY(${dirY})`)
+    
+                    let rangeX = cell + dirX;
+                    let rangeY = row + dirY;
+                    
+                    console.log('!tableData[rangeY]', !tableData[rangeY]);
+                    if (!tableData[rangeY]) {
+                        continue;
+                    }
+    
+                    if (0 > rangeX || tableData[0].length <= rangeX) {
+                        continue;
+                    }
+    
+                    if (tableData[row + dirY][cell + dirX]) {
+                        console.log(`table data - ${tableData[row + dirY][cell + dirX]}`)
+                        around = around.concat(
+                            tableData[row + dirY][cell + dirX]
+                        )
+                    }
+                }
+    
+                const count = around.filter(v => [CODE.MINE, CODE.FLAG_MINE, CODE.QUESTION_MINE].includes(v)).length;
+                tableData[row][cell] = count;
+
+                if (0 === count) {
+                    const near = [];
+                    for (let i = 0; i < dirs.length; ++i) {
+                        let dirX = dirs[i][0];
+                        let dirY = dirs[i][1];
+
+                        let rangeX = cell + dirX;
+                        let rangeY = row + dirY;
+        
+                        if (!tableData[rangeY]) {
+                            continue;
+                        }
+
+                        if (0 > rangeX || tableData[0].length <= rangeX) {
+                            continue;
+                        }
+
+                        near.push([rangeY, rangeX]);
+                    }
+
+                    console.log('near : ', near);
+                    near.forEach(n => checkAround(n[0], n[1]));
+                }
+    
+                console.log(`around - ${around}`);
             }
 
-            tableData[action.row][action.cell] = around
-                .filter(v => [CODE.MINE, CODE.FLAG_MINE, CODE.QUESTION_MINE].includes(v))
-                .length;
-
-            console.log(`around - ${around}`);
+            checkAround(action.row, action.cell);
  
             return {
                 ...state,
