@@ -1,4 +1,4 @@
-import React, { useReducer, createContext, useMemo } from 'react';
+import React, { useReducer, createContext, useMemo, useEffect } from 'react';
 import Table from './Table'
 import Form from './Form'
 
@@ -31,8 +31,14 @@ export const TableContext = createContext({
 const initialState = {
     tableData: [],
     timer: 0,
-    result: 0,
-    halted: false,
+    result: '',
+    halted: true,
+    openedCount: 0,
+    data: {
+        row: 0,
+        cell: 0,
+        mine: 0,
+    },
 }
 
 export const START_GAME = 'START_GAME';
@@ -41,6 +47,7 @@ export const CLICK_MINE = 'CLICK_MINE';
 export const FLAG_CELL = 'FLAG_CELL';
 export const QUESTION_CELL = 'QUESTION_CELL';
 export const NORMALIZE_CELL = 'NORMALIZE_CELL';
+export const INCREMENT_TIMER = 'INCREMENT_TIMER';
 
 const plantMine = (row, cell, mine) => {
     console.log(row, cell, mine);
@@ -81,6 +88,14 @@ const reducer = (state, action) => {
         case START_GAME:
             return {
                 ...state,
+                data: {
+                    row: action.row,
+                    cell: action.cell,
+                    mine: action.mine,
+                },
+                openedCount: 0,
+                timer: 0,
+                halted: false,
                 tableData: plantMine(action.row, action.cell, action.mine),
             }
         case OPEN_CELL: {
@@ -94,7 +109,7 @@ const reducer = (state, action) => {
 
             const checked = [];
             const checkAround = (row, cell) => {
-                console.log('row/cel : ', row + ',' + cell);
+                //console.log('row/cel : ', row + ',' + cell);
                 // 이미 열린 칸이라면 패스
                 const isIncluded = [CODE.OPENED, CODE.FLAG_MINE, CODE.FLAG, CODE.QUESTION_MINE, CODE.QUESTION].includes(tableData[row][cell]);
                 if (isIncluded) {
@@ -114,19 +129,19 @@ const reducer = (state, action) => {
                     [-1, 1], [0, 1], [1, 1],
                 ]
     
-                console.log(`loop - dirs(${dirs})`);
+                //console.log(`loop - dirs(${dirs})`);
     
                 let around = [];
                 for (let i = 0; i < dirs.length; ++i) {
                     let dirX = dirs[i][0];
                     let dirY = dirs[i][1];
     
-                    console.log(`loop - dirX(${dirX}) dirY(${dirY})`)
+                    //console.log(`loop - dirX(${dirX}) dirY(${dirY})`)
     
                     let rangeX = cell + dirX;
                     let rangeY = row + dirY;
                     
-                    console.log('!tableData[rangeY]', !tableData[rangeY]);
+                    //console.log('!tableData[rangeY]', !tableData[rangeY]);
                     if (!tableData[rangeY]) {
                         continue;
                     }
@@ -136,7 +151,7 @@ const reducer = (state, action) => {
                     }
     
                     if (tableData[row + dirY][cell + dirX]) {
-                        console.log(`table data - ${tableData[row + dirY][cell + dirX]}`)
+                        //console.log(`table data - ${tableData[row + dirY][cell + dirX]}`)
                         around = around.concat(
                             tableData[row + dirY][cell + dirX]
                         )
@@ -166,18 +181,27 @@ const reducer = (state, action) => {
                         near.push([rangeY, rangeX]);
                     }
 
-                    console.log('near : ', near);
+                    //console.log('near : ', near);
                     near.forEach(n => checkAround(n[0], n[1]));
                 }
     
-                console.log(`around - ${around}`);
+                //console.log(`around - ${around}`);
             }
 
             checkAround(action.row, action.cell);
+            let halted = false;
+            let result = '';
+            if (state.data.row * state.data.cell - state.data.mine === state.openedCount + checked.length) {
+                halted = true;
+                result = '승리';
+            }
  
             return {
                 ...state,
                 tableData,
+                openedCount: state.openedCount + checked.length,
+                halted: halted,
+                result: result,
             }
         }
         case CLICK_MINE: {
@@ -232,6 +256,12 @@ const reducer = (state, action) => {
                 tableData,
             };
         }
+        case INCREMENT_TIMER: {
+            return {
+                ...state,
+                timer: state.timer + 1,
+            }
+        }
         default:
             return state;
     }
@@ -248,6 +278,19 @@ const MineSearch = () => {
             dispatch,
         }
     }, [tableData, halted]);
+
+    useEffect(() => {
+        console.log(`halted 의 상태 변화 - ${halted}`)
+        let timer;
+        if (halted === false) {
+            timer = setInterval(() => {
+                dispatch({ type: INCREMENT_TIMER })
+            }, 1000);
+        }
+        return () => {
+            clearInterval(timer);
+        };
+    }, [halted]);
 
     return (
         <TableContext.Provider value={value}>
